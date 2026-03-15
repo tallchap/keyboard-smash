@@ -215,10 +215,19 @@ function playRisingTone() {
 let W, H;
 function resize() {
   W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
+  // Use visualViewport height if available (shrinks when mobile keyboard opens)
+  if (window.visualViewport) {
+    H = canvas.height = window.visualViewport.height;
+    canvas.style.height = H + 'px';
+  } else {
+    H = canvas.height = window.innerHeight;
+  }
 }
 resize();
 window.addEventListener('resize', resize);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', resize);
+}
 
 // Game state
 let charY, velocity, combo, comboTimer, keys, exploded, explosionTime;
