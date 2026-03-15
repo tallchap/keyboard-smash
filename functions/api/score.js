@@ -73,39 +73,23 @@ export async function onRequestPost(context) {
     await KV.put('leaderboard_dates', JSON.stringify(datesRaw));
   }
 
-  // Track permanent smashes (seen more than once)
+  // Track smash — every play gets a permanent page
   const smashKey = `smash:${smash}`;
   const prev = await KV.get(smashKey, 'json');
-  let permanent = false;
 
-  if (prev) {
-    // Repeat — mark as permanent, update with latest/best stats
-    permanent = true;
-    await KV.put(smashKey, JSON.stringify({
-      smash,
-      count: (prev.count || 1) + 1,
-      bestScore: Math.max(prev.bestScore || 0, score),
-      bestKeys: score >= (prev.bestScore || 0) ? keys : (prev.bestKeys || keys),
-      lastSeen: new Date().toISOString(),
-      firstSeen: prev.firstSeen || prev.lastSeen || new Date().toISOString(),
-      permanent: true,
-    }));
-  } else {
-    // First time — just record it, not permanent yet
-    await KV.put(smashKey, JSON.stringify({
-      smash,
-      count: 1,
-      bestScore: score,
-      bestKeys: keys,
-      lastSeen: new Date().toISOString(),
-      firstSeen: new Date().toISOString(),
-      permanent: false,
-    }));
-  }
+  await KV.put(smashKey, JSON.stringify({
+    smash,
+    count: (prev?.count || 0) + 1,
+    bestScore: Math.max(prev?.bestScore || 0, score),
+    bestKeys: score >= (prev?.bestScore || 0) ? keys : (prev?.bestKeys || keys),
+    lastSeen: new Date().toISOString(),
+    firstSeen: prev?.firstSeen || new Date().toISOString(),
+    permanent: true,
+  }));
 
   const rank = existing.findIndex(e => e.id === entry.id) + 1;
 
-  return json({ ok: true, rank, total: existing.length, id: entry.id, permanent });
+  return json({ ok: true, rank, total: existing.length, id: entry.id, permanent: true });
 }
 
 export async function onRequestGet(context) {
@@ -124,11 +108,5 @@ export async function onRequestGet(context) {
   const key = `leaderboard:${date}`;
   const entries = await KV.get(key, 'json') || [];
 
-  // Check which smashes are permanent
-  const checked = await Promise.all(entries.map(async (entry) => {
-    const smashData = await KV.get(`smash:${entry.smash}`, 'json');
-    return { ...entry, permanent: smashData?.permanent || false };
-  }));
-
-  return json({ date, entries: checked, total: checked.length });
+  return json({ date, entries, total: entries.length });
 }
