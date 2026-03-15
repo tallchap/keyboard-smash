@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyboard Smash Leaderboard</title>
+<meta name="description" content="Today's best keyboard smashes ranked by score. Think you can smash harder? Prove it.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    border-bottom: 1px solid rgba(255,100,50,0.3);
+  }
+  .header h1 {
+    font-size: 36px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255,100,50,0.6);
+    letter-spacing: 3px;
+  }
+  .header .date {
+    color: #888;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  .header .subtitle {
+    color: #ffcc00;
+    margin-top: 6px;
+    font-size: 16px;
+  }
+  .header .count {
+    color: #666;
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .play-btn {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 28px;
+    background: rgba(255,80,40,0.8);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 15px;
+    letter-spacing: 1px;
+    transition: background 0.2s;
+  }
+  .play-btn:hover { background: rgba(255,80,40,1); }
+  .day-tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 16px 20px;
+    flex-wrap: wrap;
+  }
+  .day-tab {
+    padding: 6px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: #888;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .day-tab:hover { border-color: rgba(255,200,50,0.4); color: #ccc; }
+  .day-tab.active {
+    background: rgba(255,200,50,0.15);
+    border-color: rgba(255,200,50,0.5);
+    color: #ffcc00;
+  }
+  .board {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .entry {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+  .entry:hover {
+    border-color: rgba(255,200,50,0.3);
+  }
+  .entry.rank-1 { border-color: rgba(255,200,50,0.5); background: rgba(255,200,50,0.06); }
+  .entry.rank-2 { border-color: rgba(192,192,192,0.4); background: rgba(192,192,192,0.04); }
+  .entry.rank-3 { border-color: rgba(205,127,50,0.4); background: rgba(205,127,50,0.04); }
+  .entry-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .rank {
+    font-size: 22px;
+    font-weight: 900;
+    min-width: 36px;
+    text-align: center;
+  }
+  .rank-1 .rank { color: #ffd700; }
+  .rank-2 .rank { color: #c0c0c0; }
+  .rank-3 .rank { color: #cd7f32; }
+  .entry:not(.rank-1):not(.rank-2):not(.rank-3) .rank { color: #555; }
+  .smash {
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    color: #ff8844;
+    word-break: break-all;
+    flex: 1;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .smash.expanded {
+    white-space: normal;
+    word-break: break-all;
+  }
+  .score-badge {
+    background: rgba(255,200,50,0.15);
+    color: #ffcc00;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .smash-label {
+    font-size: 9px;
+    color: #383838;
+    padding-left: 50px;
+    margin-bottom: -2px;
+    letter-spacing: 0.3px;
+  }
+  .entry-desc {
+    padding: 8px 0 6px 50px;
+    font-size: 13px;
+    color: #999;
+    line-height: 1.6;
+  }
+  .desc-smash {
+    color: #ff8844;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+  }
+  .desc-score {
+    color: #ffcc00;
+    font-weight: bold;
+  }
+  .desc-position {
+    color: #aaa;
+    font-style: italic;
+  }
+  .entry-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-left: 50px;
+  }
+  .meta-keys {
+    color: #555;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .meta-time {
+    color: #444;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .empty {
+    text-align: center;
+    padding: 80px 20px;
+    color: #555;
+  }
+  .entry-link { text-decoration: none; color: inherit; display: block; }
+  .entry-link:hover .entry { border-color: rgba(255,200,50,0.5); }
+  .empty h2 { color: #777; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>KEYBOARD SMASH LEADERBOARD</h1>
+  <div class="date" id="dateDisplay"></div>
+  <div class="subtitle">Think you can smash harder? Prove it.</div>
+  <div class="count" id="countDisplay"></div>
+  <a class="play-btn" href="index.html">PLAY NOW</a>
+</div>
+
+<div class="day-tabs" id="dayTabs"></div>
+<div class="board" id="board"></div>
+<div class="seo-block" id="seoBlock"></div>
+
+<script>
+const storageKey = 'kbsmash_leaderboard';
+
+function getAll() {
+  return JSON.parse(localStorage.getItem(storageKey) || '{}');
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function formatTime(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function getPositionLine(rank, total) {
+  if (total === 1) return `#1 on today's leaderboard — the only one here. That won't last.`;
+  if (rank === 1) return `#1 on today's leaderboard. ${total - 1} other smash${total > 2 ? 'es' : ''} couldn't touch it.`;
+  if (rank === 2) return `#2 on today's leaderboard. One smash stands between you and the top.`;
+  if (rank === 3) return `#3 on today's leaderboard. Close enough to taste #1.`;
+  if (rank <= Math.ceil(total * 0.1)) return `#${rank} of ${total} on today's leaderboard. Top 10% — not bad at all.`;
+  if (rank <= Math.ceil(total * 0.25)) return `#${rank} of ${total} on today's leaderboard. Upper quarter. Your fingers have potential.`;
+  if (rank <= Math.ceil(total * 0.5)) return `#${rank} of ${total} on today's leaderboard. Middle of the pack. Smash harder.`;
+  return `#${rank} of ${total} on today's leaderboard. You can do better than that.`;
+}
+
+
+function renderBoard(date) {
+  const all = getAll();
+  const entries = all[date] || [];
+  const board = document.getElementById('board');
+  const seoBlock = document.getElementById('seoBlock');
+
+  document.getElementById('dateDisplay').textContent = formatDate(date);
+  document.getElementById('countDisplay').textContent = entries.length > 0
+    ? `${entries.length} smash${entries.length !== 1 ? 'es' : ''} recorded today`
+    : '';
+
+  // Update active tab
+  document.querySelectorAll('.day-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.date === date);
+  });
+
+  if (entries.length === 0) {
+    board.innerHTML = `
+      <div class="empty">
+        <h2>No smashes yet today</h2>
+        <p>Be the first to smash your keyboard and claim #1.</p>
+      </div>`;
+    seoBlock.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  entries.forEach((entry, i) => {
+    const rank = i + 1;
+    const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+    const posLine = getPositionLine(rank, entries.length);
+    const medal = rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+
+    const smashParam = encodeURIComponent(entry.smash);
+    const smashUrl = `smash.html?s=${smashParam}&score=${entry.score}&rank=${rank}&total=${entries.length}&keys=${entry.keys}`;
+
+    html += `
+      <a class="entry-link" href="${smashUrl}">
+      <article class="entry${rankClass}" id="smash-${entry.id}">
+        <div class="smash-label">Someone smashed out</div>
+        <div class="entry-top">
+          <div class="rank">${medal}</div>
+          <div class="smash">${escHtml(entry.smash)}</div>
+          <div class="score-badge">${entry.score.toLocaleString()} pts</div>
+        </div>
+        <div class="entry-desc">
+          That keyboard smash is worth <span class="desc-score">${entry.score}</span> points. <span class="desc-position">${posLine}</span>
+        </div>
+        <div class="entry-meta">
+          <div class="meta-keys">${entry.keys} keys</div>
+          <div class="meta-time">${formatTime(entry.time)}</div>
+        </div>
+      </article>
+      </a>`;
+  });
+
+  board.innerHTML = html;
+  seoBlock.innerHTML = '';
+}
+
+function escHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function renderTabs() {
+  const all = getAll();
+  const dates = Object.keys(all).sort().reverse();
+  const today = todayStr();
+
+  // Always include today
+  if (!dates.includes(today)) dates.unshift(today);
+
+  const tabs = document.getElementById('dayTabs');
+  tabs.innerHTML = dates.map(d => {
+    const label = d === today ? 'Today' : formatDate(d).replace(/,?\s*\d{4}$/, '');
+    const count = (all[d] || []).length;
+    return `<div class="day-tab" data-date="${d}" onclick="renderBoard('${d}')">${label}${count ? ` (${count})` : ''}</div>`;
+  }).join('');
+}
+
+// Init
+renderTabs();
+renderBoard(todayStr());
+</script>
+</body>
+</html>
