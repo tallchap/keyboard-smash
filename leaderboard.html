@@ -274,7 +274,7 @@ async function renderBoard(date) {
       const posLine = getPositionLine(rank, entries.length);
       const medal = rank === 1 ? '\u{1F451}' : rank === 2 ? '\u{1F948}' : rank === 3 ? '\u{1F949}' : `#${rank}`;
 
-      const smashUrl = `/s/${encodeURIComponent(entry.smash)}`;
+      const smashUrl = `/s/${encodeURIComponent(entry.smash).replace(/%3B/gi, ';')}`;
 
       html += `
         <a class="entry-link" href="${smashUrl}">

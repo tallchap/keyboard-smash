@@ -26,6 +26,10 @@ function escHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function encodeSmashPath(smash) {
+  return encodeURIComponent(smash).replace(/%3B/gi, ';');
+}
+
 function renderPage(data) {
   const { smash, count, bestScore, bestKeys } = data;
   const escaped = escHtml(smash);
@@ -38,7 +42,7 @@ function renderPage(data) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escaped} - Keyboard Smash</title>
 <meta name="description" content="${escHtml(desc)}">
-<link rel="canonical" href="https://smashyourkeyboard.com/s/${encodeURIComponent(smash)}">
+<link rel="canonical" href="https://smashyourkeyboard.com/s/${encodeSmashPath(smash)}">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
