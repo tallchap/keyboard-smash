@@ -152,7 +152,7 @@ async function loadStats() {
   }
 }
 
-function render({ pages, stats }) {
+function render({ pages, stats, countryStats, referrerStats, deviceStats }) {
   const content = document.getElementById('content');
 
   // Sort dates descending
@@ -281,7 +281,41 @@ function render({ pages, stats }) {
         ${dailyRows || '<tr><td colspan="3" style="color:#555">No data yet</td></tr>'}
       </table>
     </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;margin-bottom:40px">
+      <div class="table-section" style="margin-bottom:0">
+        <div class="chart-title">Traffic sources (30 days)</div>
+        <table>
+          <tr><th>Source</th><th style="text-align:right">Views</th></tr>
+          ${renderDimensionRows(referrerStats)}
+        </table>
+      </div>
+
+      <div class="table-section" style="margin-bottom:0">
+        <div class="chart-title">Countries (30 days)</div>
+        <table>
+          <tr><th>Country</th><th style="text-align:right">Views</th></tr>
+          ${renderDimensionRows(countryStats)}
+        </table>
+      </div>
+
+      <div class="table-section" style="margin-bottom:0">
+        <div class="chart-title">Devices (30 days)</div>
+        <table>
+          <tr><th>Device</th><th style="text-align:right">Views</th></tr>
+          ${renderDimensionRows(deviceStats)}
+        </table>
+      </div>
+    </div>
   `;
+}
+
+function renderDimensionRows(obj) {
+  const entries = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) return '<tr><td colspan="2" style="color:#555">No data yet</td></tr>';
+  return entries.map(([name, count]) =>
+    `<tr><td>${name}</td><td class="num">${count}</td></tr>`
+  ).join('');
 }
 
 loadStats();
