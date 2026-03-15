@@ -229,6 +229,10 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', resize);
 }
 
+// Mobile detection
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 600;
+const charScale = isMobile ? 0.6 : 1;
+
 // Game state
 let charY, velocity, combo, comboTimer, keys, exploded, explosionTime;
 let particles = [];
@@ -250,7 +254,7 @@ function initStars() {
 }
 
 function reset() {
-  charY = H - 120;
+  charY = isMobile ? H - 40 : H - 120;
   velocity = 0;
   combo = 0;
   comboTimer = 0;
@@ -516,8 +520,9 @@ function update() {
     charY += velocity;
 
     // Floor
-    if (charY > H - 120) {
-      charY = H - 120;
+    const floor = isMobile ? H - 40 : H - 120;
+    if (charY > floor) {
+      charY = floor;
       velocity = 0;
     }
 
@@ -695,7 +700,7 @@ function draw() {
 
   // Character
   if (!exploded) {
-    drawCharacter(W/2, charY, 1);
+    drawCharacter(W/2, charY, charScale);
   }
 
   // Combo display
