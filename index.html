@@ -8,12 +8,18 @@
 <link rel="canonical" href="https://smashyourkeyboard.com/">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
+  html, body {
     background: #0a0a1a;
     overflow: hidden;
-    height: 100vh;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
     font-family: 'Segoe UI', sans-serif;
     user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
   }
   canvas { display: block; }
   #ui {
@@ -565,6 +571,11 @@ function focusMobileInput() {
 }
 document.addEventListener('touchstart', focusMobileInput);
 document.addEventListener('touchend', focusMobileInput);
+
+// Prevent scrolling on mobile
+document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('scroll', (e) => { window.scrollTo(0, 0); });
+
 mobileInput.focus();
 
 // Main loop
