@@ -493,10 +493,19 @@ mobileInput.addEventListener('input', (e) => {
 });
 
 // Auto-focus the input on mobile to bring up keyboard
+// Also unlock audio on first touch (iOS requires this from a direct user gesture)
 function focusMobileInput() {
   mobileInput.focus();
+  audioCtx.resume();
+  // Play a silent buffer to fully unlock audio on iOS
+  const buf = audioCtx.createBuffer(1, 1, 22050);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start(0);
 }
 document.addEventListener('touchstart', focusMobileInput);
+document.addEventListener('touchend', focusMobileInput);
 mobileInput.focus();
 
 // Main loop
