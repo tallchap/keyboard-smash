@@ -205,12 +205,6 @@
 <div class="seo-block" id="seoBlock"></div>
 
 <script>
-const storageKey = 'kbsmash_leaderboard';
-
-function getAll() {
-  return JSON.parse(localStorage.getItem(storageKey) || '{}');
-}
-
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -226,75 +220,14 @@ function formatTime(isoStr) {
 }
 
 function getPositionLine(rank, total) {
-  if (total === 1) return `#1 on today's leaderboard — the only one here. That won't last.`;
-  if (rank === 1) return `#1 on today's leaderboard. ${total - 1} other smash${total > 2 ? 'es' : ''} couldn't touch it.`;
-  if (rank === 2) return `#2 on today's leaderboard. One smash stands between you and the top.`;
-  if (rank === 3) return `#3 on today's leaderboard. Close enough to taste #1.`;
-  if (rank <= Math.ceil(total * 0.1)) return `#${rank} of ${total} on today's leaderboard. Top 10% — not bad at all.`;
-  if (rank <= Math.ceil(total * 0.25)) return `#${rank} of ${total} on today's leaderboard. Upper quarter. Your fingers have potential.`;
-  if (rank <= Math.ceil(total * 0.5)) return `#${rank} of ${total} on today's leaderboard. Middle of the pack. Smash harder.`;
-  return `#${rank} of ${total} on today's leaderboard. You can do better than that.`;
-}
-
-
-function renderBoard(date) {
-  const all = getAll();
-  const entries = all[date] || [];
-  const board = document.getElementById('board');
-  const seoBlock = document.getElementById('seoBlock');
-
-  document.getElementById('dateDisplay').textContent = formatDate(date);
-  document.getElementById('countDisplay').textContent = entries.length > 0
-    ? `${entries.length} smash${entries.length !== 1 ? 'es' : ''} recorded today`
-    : '';
-
-  // Update active tab
-  document.querySelectorAll('.day-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.date === date);
-  });
-
-  if (entries.length === 0) {
-    board.innerHTML = `
-      <div class="empty">
-        <h2>No smashes yet today</h2>
-        <p>Be the first to smash your keyboard and claim #1.</p>
-      </div>`;
-    seoBlock.innerHTML = '';
-    return;
-  }
-
-  let html = '';
-  entries.forEach((entry, i) => {
-    const rank = i + 1;
-    const rankClass = rank <= 3 ? ` rank-${rank}` : '';
-    const posLine = getPositionLine(rank, entries.length);
-    const medal = rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-
-    const smashParam = encodeURIComponent(entry.smash);
-    const smashUrl = `smash.html?s=${smashParam}&score=${entry.score}&rank=${rank}&total=${entries.length}&keys=${entry.keys}`;
-
-    html += `
-      <a class="entry-link" href="${smashUrl}">
-      <article class="entry${rankClass}" id="smash-${entry.id}">
-        <div class="smash-label">Someone smashed out</div>
-        <div class="entry-top">
-          <div class="rank">${medal}</div>
-          <div class="smash">${escHtml(entry.smash)}</div>
-          <div class="score-badge">${entry.score.toLocaleString()} pts</div>
-        </div>
-        <div class="entry-desc">
-          That keyboard smash is worth <span class="desc-score">${entry.score}</span> points. <span class="desc-position">${posLine}</span>
-        </div>
-        <div class="entry-meta">
-          <div class="meta-keys">${entry.keys} keys</div>
-          <div class="meta-time">${formatTime(entry.time)}</div>
-        </div>
-      </article>
-      </a>`;
-  });
-
-  board.innerHTML = html;
-  seoBlock.innerHTML = '';
+  if (total === 1) return `#1 on the leaderboard — the only one here. That won't last.`;
+  if (rank === 1) return `#1 on the leaderboard. ${total - 1} other smash${total > 2 ? 'es' : ''} couldn't touch it.`;
+  if (rank === 2) return `#2 on the leaderboard. One smash stands between you and the top.`;
+  if (rank === 3) return `#3 on the leaderboard. Close enough to taste #1.`;
+  if (rank <= Math.ceil(total * 0.1)) return `#${rank} of ${total}. Top 10% — not bad at all.`;
+  if (rank <= Math.ceil(total * 0.25)) return `#${rank} of ${total}. Upper quarter. Your fingers have potential.`;
+  if (rank <= Math.ceil(total * 0.5)) return `#${rank} of ${total}. Middle of the pack. Smash harder.`;
+  return `#${rank} of ${total}. You can do better than that.`;
 }
 
 function escHtml(str) {
@@ -303,20 +236,94 @@ function escHtml(str) {
   return div.innerHTML;
 }
 
-function renderTabs() {
-  const all = getAll();
-  const dates = Object.keys(all).sort().reverse();
+async function renderBoard(date) {
+  const board = document.getElementById('board');
+  const seoBlock = document.getElementById('seoBlock');
+
+  board.innerHTML = '<div class="empty"><p>Loading...</p></div>';
+
+  try {
+    const res = await fetch(`/api/score?date=${date}`);
+    const data = await res.json();
+    const entries = data.entries || [];
+
+    document.getElementById('dateDisplay').textContent = formatDate(date);
+    document.getElementById('countDisplay').textContent = entries.length > 0
+      ? `${entries.length} smash${entries.length !== 1 ? 'es' : ''} recorded`
+      : '';
+
+    // Update active tab
+    document.querySelectorAll('.day-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.date === date);
+    });
+
+    if (entries.length === 0) {
+      board.innerHTML = `
+        <div class="empty">
+          <h2>No smashes yet</h2>
+          <p>Be the first to smash your keyboard and claim #1.</p>
+        </div>`;
+      seoBlock.innerHTML = '';
+      return;
+    }
+
+    let html = '';
+    entries.forEach((entry, i) => {
+      const rank = i + 1;
+      const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+      const posLine = getPositionLine(rank, entries.length);
+      const medal = rank === 1 ? '\u{1F451}' : rank === 2 ? '\u{1F948}' : rank === 3 ? '\u{1F949}' : `#${rank}`;
+
+      const smashParam = encodeURIComponent(entry.smash);
+      const smashUrl = `smash.html?s=${smashParam}&score=${entry.score}&rank=${rank}&total=${entries.length}&keys=${entry.keys}`;
+
+      html += `
+        <a class="entry-link" href="${smashUrl}">
+        <article class="entry${rankClass}" id="smash-${entry.id}">
+          <div class="smash-label">Someone smashed out</div>
+          <div class="entry-top">
+            <div class="rank">${medal}</div>
+            <div class="smash">${escHtml(entry.smash)}</div>
+            <div class="score-badge">${entry.score.toLocaleString()} pts</div>
+          </div>
+          <div class="entry-desc">
+            That keyboard smash is worth <span class="desc-score">${entry.score}</span> points. <span class="desc-position">${posLine}</span>
+          </div>
+          <div class="entry-meta">
+            <div class="meta-keys">${entry.keys} keys</div>
+            <div class="meta-time">${formatTime(entry.time)}</div>
+          </div>
+        </article>
+        </a>`;
+    });
+
+    board.innerHTML = html;
+    seoBlock.innerHTML = '';
+  } catch (err) {
+    board.innerHTML = '<div class="empty"><p>Failed to load leaderboard. Try refreshing.</p></div>';
+  }
+}
+
+async function renderTabs() {
   const today = todayStr();
 
-  // Always include today
-  if (!dates.includes(today)) dates.unshift(today);
+  try {
+    const res = await fetch('/api/score?list=dates');
+    const data = await res.json();
+    const dates = (data.dates || []).sort().reverse();
 
-  const tabs = document.getElementById('dayTabs');
-  tabs.innerHTML = dates.map(d => {
-    const label = d === today ? 'Today' : formatDate(d).replace(/,?\s*\d{4}$/, '');
-    const count = (all[d] || []).length;
-    return `<div class="day-tab" data-date="${d}" onclick="renderBoard('${d}')">${label}${count ? ` (${count})` : ''}</div>`;
-  }).join('');
+    if (!dates.includes(today)) dates.unshift(today);
+
+    const tabs = document.getElementById('dayTabs');
+    tabs.innerHTML = dates.map(d => {
+      const label = d === today ? 'Today' : formatDate(d).replace(/,?\s*\d{4}$/, '');
+      return `<div class="day-tab" data-date="${d}" onclick="renderBoard('${d}')">${label}</div>`;
+    }).join('');
+  } catch {
+    // Fallback to just today
+    const tabs = document.getElementById('dayTabs');
+    tabs.innerHTML = `<div class="day-tab active" data-date="${today}" onclick="renderBoard('${today}')">Today</div>`;
+  }
 }
 
 // Init

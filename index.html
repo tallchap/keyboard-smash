@@ -328,34 +328,23 @@ function reset() {
 }
 
 function saveToLeaderboard() {
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const storageKey = 'kbsmash_leaderboard';
-  const all = JSON.parse(localStorage.getItem(storageKey) || '{}');
-  if (!all[today]) all[today] = [];
-
-  // Calculate score: keys + combo bonus
   const maxCombo = combo;
   const score = keys * 10 + maxCombo * 5;
 
-  all[today].push({
-    smash: smashLog,
-    score: score,
-    keys: keys,
-    time: new Date().toISOString(),
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-  });
-
-  // Sort descending by score
-  all[today].sort((a, b) => b.score - a.score);
-
-  // Cap at 200 per day
-  if (all[today].length > 200) all[today] = all[today].slice(0, 200);
-
-  // Clean up old days (keep last 7)
-  const dates = Object.keys(all).sort().reverse();
-  dates.slice(7).forEach(d => delete all[d]);
-
-  localStorage.setItem(storageKey, JSON.stringify(all));
+  fetch('/api/score', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ smash: smashLog, score, keys })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      // Update the leaderboard link with rank info
+      const link = document.getElementById('leaderboard-link');
+      link.textContent = `#${data.rank} of ${data.total} — View Leaderboard`;
+    }
+  })
+  .catch(() => {});
 }
 
 reset();
