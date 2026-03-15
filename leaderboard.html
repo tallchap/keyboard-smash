@@ -275,7 +275,9 @@ async function renderBoard(date) {
       const medal = rank === 1 ? '\u{1F451}' : rank === 2 ? '\u{1F948}' : rank === 3 ? '\u{1F949}' : `#${rank}`;
 
       const smashParam = encodeURIComponent(entry.smash);
-      const smashUrl = `smash.html?s=${smashParam}&score=${entry.score}&rank=${rank}&total=${entries.length}&keys=${entry.keys}`;
+      const smashUrl = entry.permanent
+        ? `/s/${smashParam}`
+        : `smash.html?s=${smashParam}&score=${entry.score}&rank=${rank}&total=${entries.length}&keys=${entry.keys}`;
 
       html += `
         <a class="entry-link" href="${smashUrl}">
