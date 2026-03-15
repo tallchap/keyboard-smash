@@ -37,6 +37,22 @@
     color: #888;
     margin-top: 6px;
   }
+  @media (max-width: 600px) {
+    #ui {
+      top: auto;
+      bottom: 8px;
+      right: 8px;
+      left: auto;
+      transform: none;
+      text-align: right;
+    }
+    #title {
+      font-size: 12px;
+      letter-spacing: 1px;
+      opacity: 0.5;
+    }
+    #subtitle { display: none; }
+  }
   #combo {
     position: fixed;
     bottom: 30px;
@@ -254,7 +270,7 @@ function initStars() {
 }
 
 function reset() {
-  charY = isMobile ? H - 40 : H - 120;
+  charY = isMobile ? H - 20 : H - 120;
   velocity = 0;
   combo = 0;
   comboTimer = 0;
@@ -520,7 +536,7 @@ function update() {
     charY += velocity;
 
     // Floor
-    const floor = isMobile ? H - 40 : H - 120;
+    const floor = isMobile ? H - 20 : H - 120;
     if (charY > floor) {
       charY = floor;
       velocity = 0;
