@@ -75,12 +75,17 @@
   <div id="subtitle">SMASH YOUR KEYBOARD TO RISE</div>
 </div>
 <div id="combo"></div>
-<button id="restart" onclick="reset()">SMASH AGAIN</button>
+<button id="restart" onclick="reset(); document.getElementById('mobile-input').focus();">SMASH AGAIN</button>
 <a id="leaderboard-link" href="leaderboard.html" style="
   position:fixed; top:50%; left:50%; transform:translate(-50%,30px);
   font-size:16px; color:#ffcc00; z-index:20; display:none;
   text-decoration:underline; cursor:pointer;
 ">View Today's Leaderboard</a>
+<input id="mobile-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  opacity:0; z-index:5; font-size:16px; caret-color:transparent;
+  border:none; outline:none; background:transparent;
+">
 <canvas id="c"></canvas>
 <script>
 const canvas = document.getElementById('c');
@@ -422,30 +427,27 @@ function addKeyPop(key) {
   });
 }
 
-// Input
-document.addEventListener('keydown', (e) => {
+// Input — shared handler for desktop and mobile
+const mobileInput = document.getElementById('mobile-input');
+
+function handleSmashKey(char) {
   if (exploded) return;
-  e.preventDefault();
-  audioCtx.resume(); // unlock audio on first interaction
+  audioCtx.resume();
 
   keys++;
   combo++;
   comboTimer = 60;
 
-  // Capture the actual character for the smash log
-  if (e.key.length === 1) smashLog += e.key;
+  if (char && char.length === 1) smashLog += char;
 
   playKeyHit();
   playRisingTone();
 
-  // Each keypress gives upward boost (tuned so ~15 keys in ~1s just barely reaches the top)
   const boost = -3.2 - Math.min(combo * 0.15, 2.5);
   velocity += boost;
 
-  // Small shake on press
   shakeAmount = Math.max(shakeAmount, 2 + combo * 0.3);
 
-  // Mini particles from character
   for (let i = 0; i < 3; i++) {
     particles.push({
       x: W/2 + (Math.random()-0.5)*20,
@@ -459,8 +461,34 @@ document.addEventListener('keydown', (e) => {
     });
   }
 
-  addKeyPop(e.key);
+  addKeyPop(char || 'x');
+}
+
+// Desktop keyboard
+document.addEventListener('keydown', (e) => {
+  if (exploded) return;
+  e.preventDefault();
+  handleSmashKey(e.key);
 });
+
+// Mobile input — track what's typed via input events
+mobileInput.addEventListener('input', (e) => {
+  const data = e.data;
+  if (!data) return;
+  // Each character typed fires separately
+  for (const char of data) {
+    handleSmashKey(char);
+  }
+  // Clear the input so it keeps working
+  mobileInput.value = '';
+});
+
+// Auto-focus the input on mobile to bring up keyboard
+function focusMobileInput() {
+  mobileInput.focus();
+}
+document.addEventListener('touchstart', focusMobileInput);
+mobileInput.focus();
 
 // Main loop
 function update() {
