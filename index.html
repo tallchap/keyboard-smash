@@ -211,6 +211,41 @@ function playExplosion() {
   boom2.stop(t + 1.2);
 }
 
+function playBoingo() {
+  const t = audioCtx.currentTime;
+  // Silly springy boing
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  const baseFreq = 300 + Math.random() * 400;
+  osc.frequency.setValueAtTime(baseFreq, t);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 3, t + 0.05);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, t + 0.15);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 2, t + 0.2);
+  osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.3, t + 0.35);
+  gain.gain.setValueAtTime(0.25, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t); osc.stop(t + 0.35);
+
+  // Add a wobbly overtone
+  const osc2 = audioCtx.createOscillator();
+  const gain2 = audioCtx.createGain();
+  osc2.type = 'triangle';
+  osc2.frequency.setValueAtTime(baseFreq * 1.5, t);
+  osc2.frequency.exponentialRampToValueAtTime(baseFreq * 4, t + 0.08);
+  osc2.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, t + 0.25);
+  gain2.gain.setValueAtTime(0.12, t);
+  gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc2.connect(gain2).connect(audioCtx.destination);
+  osc2.start(t); osc2.stop(t + 0.25);
+}
+
+function isEmoji(str) {
+  const emojiRegex = /\p{Emoji_Presentation}|\p{Extended_Pictographic}/u;
+  return emojiRegex.test(str);
+}
+
 function playRisingTone() {
   // Subtle rising whine as character gets higher — plays periodically
   const t = audioCtx.currentTime;
@@ -467,9 +502,13 @@ function handleSmashKey(char) {
   combo++;
   comboTimer = 60;
 
-  if (char && char.length === 1) smashLog += char;
+  if (char) smashLog += char;
 
-  playKeyHit();
+  if (isEmoji(char)) {
+    playBoingo();
+  } else {
+    playKeyHit();
+  }
   playRisingTone();
 
   const boost = -3.2 - Math.min(combo * 0.15, 2.5);
