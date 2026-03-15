@@ -322,6 +322,9 @@ function renderTabs() {
 // Init
 renderTabs();
 renderBoard(todayStr());
+
+// Track page view
+navigator.sendBeacon('/api/view', JSON.stringify({ page: 'leaderboard' }));
 </script>
 </body>
 </html>

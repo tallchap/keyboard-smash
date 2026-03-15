@@ -1,0 +1,6 @@
+name = "keyboard-smash"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "VIEWS"
+id = "531e917c91454405ab21167abbf029df"

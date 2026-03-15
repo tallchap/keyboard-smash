@@ -117,6 +117,8 @@ document.getElementById('pageTitle').textContent = smash;
 document.getElementById('metaDesc').setAttribute('content',
   `Someone smashed out ${smash}. That keyboard smash is worth ${score} points. ${posLine}`
 );
+// Track page view
+navigator.sendBeacon('/api/view', JSON.stringify({ page: 'smash' }));
 </script>
 </body>
 </html>

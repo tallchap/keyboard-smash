@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Views Dashboard - Keyboard Smash</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255,100,50,0.6);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .subtitle { color: #666; font-size: 14px; margin-bottom: 32px; }
+  .back-link { color: #666; text-decoration: underline; font-size: 13px; }
+  .back-link:hover { color: #999; }
+
+  /* Summary cards */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+  .card-value { font-size: 36px; font-weight: 900; color: #ffcc00; margin-top: 6px; }
+  .card-sub { font-size: 12px; color: #555; margin-top: 4px; }
+
+  /* Chart */
+  .chart-section { margin-bottom: 40px; }
+  .chart-title { font-size: 16px; color: #aaa; margin-bottom: 16px; }
+  .chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 200px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 8px;
+  }
+  .bar-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+  .bar {
+    width: 100%;
+    max-width: 30px;
+    border-radius: 4px 4px 0 0;
+    min-height: 2px;
+    transition: height 0.3s;
+  }
+  .bar.page-index { background: rgba(255,100,50,0.7); }
+  .bar.page-smash { background: rgba(100,200,255,0.7); }
+  .bar.page-leaderboard { background: rgba(255,200,50,0.7); }
+  .bar.page-other { background: rgba(150,150,150,0.5); }
+  .bar-label {
+    font-size: 10px;
+    color: #555;
+    transform: rotate(-45deg);
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+  .bar-count {
+    font-size: 10px;
+    color: #888;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #888; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* Table */
+  .table-section { margin-bottom: 40px; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left;
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  td {
+    padding: 10px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  td.num { text-align: right; color: #ffcc00; font-weight: bold; }
+
+  .loading { text-align: center; padding: 80px; color: #555; }
+  .error { color: #ff6644; text-align: center; padding: 40px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>VIEWS DASHBOARD</h1>
+  <div class="subtitle">
+    Page views for smashyourkeyboard.com &middot; <a class="back-link" href="index.html">Back to game</a>
+  </div>
+
+  <div id="content">
+    <div class="loading">Loading stats...</div>
+  </div>
+</div>
+
+<script>
+async function loadStats() {
+  const content = document.getElementById('content');
+
+  try {
+    const res = await fetch('/api/view');
+    if (!res.ok) throw new Error(`API returned ${res.status}`);
+    const data = await res.json();
+
+    if (data.error) {
+      content.innerHTML = `<div class="error">${data.error}<br><br><small>Make sure the VIEWS KV namespace is bound in your Pages project settings.</small></div>`;
+      return;
+    }
+
+    render(data);
+  } catch (err) {
+    content.innerHTML = `<div class="error">Failed to load stats: ${err.message}</div>`;
+  }
+}
+
+function render({ pages, stats }) {
+  const content = document.getElementById('content');
+
+  // Sort dates descending
+  const dates = Object.keys(stats).sort().reverse();
+
+  // Calculate totals
+  let totalViews = 0;
+  const pageTotals = {};
+  pages.forEach(p => pageTotals[p] = 0);
+
+  for (const date of dates) {
+    for (const page of pages) {
+      const count = stats[date]?.[page] || 0;
+      totalViews += count;
+      pageTotals[page] = (pageTotals[page] || 0) + count;
+    }
+  }
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayViews = Object.values(stats[todayStr] || {}).reduce((a, b) => a + b, 0);
+
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().slice(0, 10);
+  const yesterdayViews = Object.values(stats[yesterdayStr] || {}).reduce((a, b) => a + b, 0);
+
+  // Last 7 days
+  const last7 = dates.filter(d => {
+    const diff = (new Date(todayStr) - new Date(d)) / 86400000;
+    return diff >= 0 && diff < 7;
+  });
+  const weekViews = last7.reduce((sum, d) => sum + Object.values(stats[d] || {}).reduce((a, b) => a + b, 0), 0);
+
+  // Chart data: last 14 days (oldest first)
+  const chartDates = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    chartDates.push(d.toISOString().slice(0, 10));
+  }
+
+  const maxDay = Math.max(1, ...chartDates.map(d =>
+    Object.values(stats[d] || {}).reduce((a, b) => a + b, 0)
+  ));
+
+  const pageColors = { index: 'page-index', smash: 'page-smash', leaderboard: 'page-leaderboard' };
+
+  let chartBars = '';
+  for (const date of chartDates) {
+    const dayTotal = Object.values(stats[date] || {}).reduce((a, b) => a + b, 0);
+    const height = Math.max(2, (dayTotal / maxDay) * 180);
+    const label = date.slice(5); // MM-DD
+    chartBars += `
+      <div class="bar-group">
+        <div class="bar-count">${dayTotal || ''}</div>
+        <div class="bar page-index" style="height:${height}px" title="${date}: ${dayTotal} views"></div>
+        <div class="bar-label">${label}</div>
+      </div>`;
+  }
+
+  // Per-page breakdown as stacked info
+  let pageRows = '';
+  const sortedPages = pages.sort((a, b) => (pageTotals[b] || 0) - (pageTotals[a] || 0));
+  for (const page of sortedPages) {
+    const todayPage = stats[todayStr]?.[page] || 0;
+    pageRows += `<tr>
+      <td>${page}</td>
+      <td class="num">${todayPage}</td>
+      <td class="num">${pageTotals[page] || 0}</td>
+    </tr>`;
+  }
+
+  // Daily breakdown table
+  let dailyRows = '';
+  for (const date of dates.slice(0, 14)) {
+    const dayTotal = Object.values(stats[date] || {}).reduce((a, b) => a + b, 0);
+    const breakdown = pages.map(p => stats[date]?.[p] ? `${p}: ${stats[date][p]}` : '').filter(Boolean).join(', ');
+    dailyRows += `<tr>
+      <td>${date}${date === todayStr ? ' (today)' : ''}</td>
+      <td class="num">${dayTotal}</td>
+      <td style="font-size:12px;color:#666">${breakdown}</td>
+    </tr>`;
+  }
+
+  content.innerHTML = `
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Today</div>
+        <div class="card-value">${todayViews}</div>
+        <div class="card-sub">page views</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Yesterday</div>
+        <div class="card-value">${yesterdayViews}</div>
+        <div class="card-sub">page views</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Last 7 days</div>
+        <div class="card-value">${weekViews}</div>
+        <div class="card-sub">page views</div>
+      </div>
+      <div class="card">
+        <div class="card-label">All time</div>
+        <div class="card-value">${totalViews}</div>
+        <div class="card-sub">${dates.length} days tracked</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">Daily views (last 14 days)</div>
+      <div class="chart">${chartBars}</div>
+    </div>
+
+    <div class="table-section">
+      <div class="chart-title">Views by page</div>
+      <table>
+        <tr><th>Page</th><th style="text-align:right">Today</th><th style="text-align:right">Total</th></tr>
+        ${pageRows || '<tr><td colspan="3" style="color:#555">No data yet</td></tr>'}
+      </table>
+    </div>
+
+    <div class="table-section">
+      <div class="chart-title">Daily breakdown</div>
+      <table>
+        <tr><th>Date</th><th style="text-align:right">Views</th><th>Breakdown</th></tr>
+        ${dailyRows || '<tr><td colspan="3" style="color:#555">No data yet</td></tr>'}
+      </table>
+    </div>
+  `;
+}
+
+loadStats();
+</script>
+</body>
+</html>

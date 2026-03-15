@@ -786,6 +786,9 @@ function loop() {
   draw();
 }
 loop();
+
+// Track page view
+navigator.sendBeacon('/api/view', JSON.stringify({ page: 'index' }));
 </script>
 </body>
 </html>
